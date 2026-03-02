@@ -52,6 +52,10 @@ export class UnifiedSdkService {
     return this.sdk.unmute({ legId });
   }
 
+  async disconnect(): Promise<void> {
+    await this.sdk.destroy();
+  }
+
   getEventTypes() {
     return OmiccUnifiedSDK.UnifiedEventType;
   }

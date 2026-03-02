@@ -37,6 +37,7 @@ import { UnifiedSdkService } from './unified-sdk.service';
           <input [(ngModel)]="destination" placeholder="0817720890" [disabled]="currentCall">
         </div>
         <button (click)="makeCall()" [disabled]="!destination || currentCall">Call</button>
+        <button (click)="testRuntimeError()" class="btn-test-error">Test Runtime Error</button>
         <button (click)="disconnect()" class="btn-disconnect">Disconnect</button>
         
         <div class="call-info" *ngIf="currentCall">
@@ -76,6 +77,7 @@ import { UnifiedSdkService } from './unified-sdk.service';
     button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
     button:disabled { opacity: 0.5; cursor: not-allowed; }
     button.btn-disconnect { background: #dc3545; }
+    button.btn-test-error { background: #fd7e14; }
     .call-info { margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 4px; }
     .call-actions button { background: #28a745; }
     .events-section { margin-top: 30px; }
@@ -143,6 +145,11 @@ export class AppComponent implements OnInit {
     this.sdkService.onEvent(eventTypes.CALL_UNMUTED, (event: any) => {
       this.addEvent('CALL_UNMUTED', event);
     });
+
+    this.sdkService.onEvent(eventTypes.SDK_ERROR, (event: any) => {
+      this.addEvent('SDK_ERROR', event);
+      this.isConnecting = false;
+    });
   }
 
   async connect() {
@@ -151,15 +158,23 @@ export class AppComponent implements OnInit {
       await this.sdkService.initialize(this.config);
     } catch (error) {
       console.error('Failed to connect:', error);
-      alert('Connection failed: ' + error);
       this.isConnecting = false;
     }
   }
 
-  disconnect() {
+  async disconnect() {
+    await this.sdkService.disconnect();
     this.isConnected = false;
     this.currentCall = null;
     this.events = [];
+  }
+
+  async testRuntimeError() {
+    try {
+      await this.sdkService.hangup('fake-leg-id-does-not-exist');
+    } catch (error) {
+      console.error('Runtime error triggered:', error);
+    }
   }
 
   async makeCall() {
@@ -167,7 +182,6 @@ export class AppComponent implements OnInit {
       await this.sdkService.makeCall(this.destination);
     } catch (error) {
       console.error('Failed to make call:', error);
-      alert('Call failed: ' + error);
     }
   }
 
